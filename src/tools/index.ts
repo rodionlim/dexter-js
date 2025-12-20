@@ -19,9 +19,10 @@ import {
   getCryptoPrices,
   getCryptoTickers,
 } from './finance/index.js';
+import { YFINANCE_TOOLS } from './yfinance/index.js';
 import { tavilySearch } from './search/index.js';
 
-export const TOOLS: StructuredToolInterface[] = [
+const FINANCE_TOOLS: StructuredToolInterface[] = [
   getIncomeStatements,
   getBalanceSheets,
   getCashFlowStatements,
@@ -40,8 +41,12 @@ export const TOOLS: StructuredToolInterface[] = [
   getNews,
   getAnalystEstimates,
   getSegmentedRevenues,
-  ...(process.env.TAVILY_API_KEY ? [tavilySearch] : []),
 ];
+
+const provider = (process.env.FINANCE_DATA_PROVIDER || process.env.DATA_PROVIDER || 'financialdatasets').toLowerCase();
+const coreTools = provider === 'yfinance' ? YFINANCE_TOOLS : FINANCE_TOOLS;
+
+export const TOOLS: StructuredToolInterface[] = [...coreTools, ...(process.env.TAVILY_API_KEY ? [tavilySearch] : [])];
 
 export {
   getIncomeStatements,

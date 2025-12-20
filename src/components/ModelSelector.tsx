@@ -15,6 +15,11 @@ const MODELS: Model[] = [
     description: "OpenAI's flagship model",
   },
   {
+    displayName: 'GPT 5 Mini',
+    modelId: 'gpt-5-mini',
+    description: "OpenAI's low cost model",
+  },
+  {
     displayName: 'Sonnet 4.5',
     modelId: 'claude-sonnet-4-5',
     description: "Anthropic's best model for complex agents",
@@ -53,25 +58,19 @@ export function ModelSelector({ model, onSelect }: ModelSelectorProps) {
   });
 
   return (
-    <Box flexDirection="column" marginTop={1}>
+    <Box flexDirection='column' marginTop={1}>
       <Text color={colors.primary} bold>
         Select model
       </Text>
-      <Text color={colors.muted}>
-        Switch between LLM models. Applies to this session and future sessions.
-      </Text>
-      <Box marginTop={1} flexDirection="column">
+      <Text color={colors.muted}>Switch between LLM models. Applies to this session and future sessions.</Text>
+      <Box marginTop={1} flexDirection='column'>
         {MODELS.map((m, idx) => {
           const isSelected = idx === selectedIndex;
           const isCurrent = model === m.modelId;
           const prefix = isSelected ? '> ' : '  ';
 
           return (
-            <Text
-              key={m.modelId}
-              color={isSelected ? colors.primaryLight : colors.primary}
-              bold={isSelected}
-            >
+            <Text key={m.modelId} color={isSelected ? colors.primaryLight : colors.primary} bold={isSelected}>
               {prefix}
               {idx + 1}. {m.displayName} · {m.description}
               {isCurrent ? ' ✓' : ''}

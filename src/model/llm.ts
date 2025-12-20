@@ -8,7 +8,7 @@ import { Runnable } from '@langchain/core/runnables';
 import { z } from 'zod';
 import { DEFAULT_SYSTEM_PROMPT } from '../agent/prompts.js';
 
-export const DEFAULT_MODEL = 'gpt-5.2';
+export const DEFAULT_MODEL = 'gpt-5-mini';
 
 // Generic retry helper with exponential backoff
 async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
@@ -88,7 +88,7 @@ export async function callLlm(prompt: string, options: CallLlmOptions = {}): Pro
     ['user', '{prompt}'],
   ]);
 
-  const llm = getChatModel(model, 0, false);
+  const llm = getChatModel(model, 1, false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let runnable: Runnable<any, any> = llm;
@@ -123,7 +123,7 @@ export async function* callLlmStream(
     ['user', '{prompt}'],
   ]);
 
-  const llm = getChatModel(model, 0, true);
+  const llm = getChatModel(model, 1, true);
   const chain = promptTemplate.pipe(llm);
 
   // For streaming, we handle retry at the connection level

@@ -14,7 +14,7 @@ export function QueueDisplay({ queries }: QueueDisplayProps) {
       <Text color={colors.muted}>Queued ({queries.length}):</Text>
       {queries.map((q, i) => (
         <Text key={i} dimColor>
-          {'  '}{i + 1}. {q.length > 60 ? q.slice(0, 57) + '...' : q}
+          {'  '}{i + 1}. {q.length > 150 ? q.slice(0, 147) + '...' : q}
         </Text>
       ))}
     </Box>

@@ -219,7 +219,7 @@ export function CLI() {
 
   if (state === 'model_select') {
     return (
-      <Box flexDirection="column">
+      <Box flexDirection='column'>
         <ModelSelector model={model} onSelect={handleModelSelect} />
       </Box>
     );
