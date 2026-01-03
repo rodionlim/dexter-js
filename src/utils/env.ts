@@ -14,6 +14,7 @@ const PROVIDER_API_KEY_MAP: Record<string, string> = {
 // Map model IDs to their required API key environment variable names (for backwards compatibility)
 const MODEL_API_KEY_MAP: Record<string, string> = {
   'gpt-5.2': 'OPENAI_API_KEY',
+  'gpt-5-mini': 'OPENAI_API_KEY',
   'claude-sonnet-4-5': 'ANTHROPIC_API_KEY',
   'gemini-3': 'GOOGLE_API_KEY',
 };

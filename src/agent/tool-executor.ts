@@ -18,6 +18,8 @@ const SMALL_MODEL = 'gpt-5-mini';
 export interface ToolExecutorOptions {
   tools: StructuredToolInterface[];
   contextManager: ToolContextManager;
+  /** Maximum number of tool calls to run concurrently (helps throttle external APIs). Defaults to 3 if not provided. */
+  maxConcurrentToolCalls?: number;
 }
 
 // ============================================================================
@@ -42,10 +44,14 @@ export class ToolExecutor {
   private readonly toolMap: Map<string, StructuredToolInterface>;
   private readonly contextManager: ToolContextManager;
 
+  // Optional runtime config such as max concurrent tool calls.
+  private readonly maxConcurrentToolCalls?: number;
+
   constructor(options: ToolExecutorOptions) {
     this.tools = options.tools;
     this.toolMap = new Map(options.tools.map(t => [t.name, t]));
     this.contextManager = options.contextManager;
+    this.maxConcurrentToolCalls = options.maxConcurrentToolCalls;
   }
 
   /**
@@ -90,17 +96,42 @@ export class ToolExecutor {
 
     let allSucceeded = true;
 
-    await Promise.all(
-      task.toolCalls.map(async (toolCall, index) => {
-        callbacks?.onToolCallUpdate?.(task.id, index, 'running');
-        
+    // Limit concurrent tool calls to avoid overwhelming external APIs (e.g., Yahoo Finance).
+    const maxConcurrent = (this.maxConcurrentToolCalls ?? 3);
+
+    // Helper: invoke a tool with simple retry/backoff for 429 / Too Many Requests errors.
+    const invokeWithRetries = async (toolName: string, tool: StructuredToolInterface, args: Record<string, unknown>) => {
+      const maxAttempts = 3;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          return await tool.invoke(args);
+        } catch (err) {
+          const msg = String(err || '');
+          const isTooMany = msg.includes('429') || msg.includes('Too Many Requests') || msg.includes('Failed to get crumb');
+          if (!isTooMany || attempt === maxAttempts) throw err;
+          const delay = Math.pow(2, attempt) * 1000 + Math.floor(Math.random() * 500);
+          await new Promise((r) => setTimeout(r, delay));
+        }
+      }
+    };
+
+    // Worker pool to process tool calls with a concurrency limit.
+    let nextIndex = 0;
+    const worker = async () => {
+      while (true) {
+        const idx = nextIndex++;
+        if (idx >= task.toolCalls!.length) return;
+
+        const toolCall = task.toolCalls![idx];
+        callbacks?.onToolCallUpdate?.(task.id, idx, 'running');
+
         try {
           const tool = this.toolMap.get(toolCall.tool);
           if (!tool) {
             throw new Error(`Tool not found: ${toolCall.tool}`);
           }
 
-          const result = await tool.invoke(toolCall.args);
+          const result = await invokeWithRetries(toolCall.tool, tool, toolCall.args);
 
           this.contextManager.saveContext(
             toolCall.tool,
@@ -111,21 +142,24 @@ export class ToolExecutor {
           );
 
           toolCall.status = 'completed';
-          callbacks?.onToolCallUpdate?.(task.id, index, 'completed');
+          callbacks?.onToolCallUpdate?.(task.id, idx, 'completed');
         } catch (error) {
           allSucceeded = false;
           toolCall.status = 'failed';
-          callbacks?.onToolCallUpdate?.(task.id, index, 'failed');
+          callbacks?.onToolCallUpdate?.(task.id, idx, 'failed');
           callbacks?.onToolCallError?.(
-            task.id, 
-            index, 
+            task.id,
+            idx,
             toolCall.tool,
             toolCall.args,
             error instanceof Error ? error : new Error(String(error))
           );
         }
-      })
-    );
+      }
+    };
+
+    const workers = Array.from({ length: Math.max(1, Math.min(maxConcurrent, task.toolCalls.length)) }, () => worker());
+    await Promise.all(workers);
 
     return allSucceeded;
   }
