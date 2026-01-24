@@ -12,7 +12,7 @@ const PROVIDERS: Provider[] = [
   {
     displayName: 'OpenAI',
     providerId: 'openai',
-    models: ['gpt-5.2', 'gpt-4.1'],
+    models: ['gpt-5-mini', 'gpt-5-mini'],
   },
   {
     displayName: 'Anthropic',
@@ -73,7 +73,7 @@ export function ProviderSelector({ provider, onSelect }: ProviderSelectorProps) 
   });
 
   return (
-    <Box flexDirection="column" marginTop={1}>
+    <Box flexDirection='column' marginTop={1}>
       <Text color={colors.primary} bold>
         Select provider
       </Text>
