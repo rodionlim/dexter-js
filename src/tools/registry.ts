@@ -1,5 +1,6 @@
 import { StructuredToolInterface } from '@langchain/core/tools';
-import { createFinancialSearch } from './finance/index.js';
+import { createFinancialSearch as createFinanceFinancialSearch } from './finance/index.js';
+import { createFinancialSearch as createYfinanceFinancialSearch } from './yfinance/financial-search.js';
 import { exaSearch, tavilySearch } from './search/index.js';
 import { skillTool, SKILL_TOOL_DESCRIPTION } from './skill.js';
 import { FINANCIAL_SEARCH_DESCRIPTION, WEB_SEARCH_DESCRIPTION } from './descriptions/index.js';
@@ -25,6 +26,9 @@ export interface RegisteredTool {
  * @returns Array of registered tools
  */
 export function getToolRegistry(model: string): RegisteredTool[] {
+  const provider = process.env.FINANCE_DATA_PROVIDER?.toLowerCase();
+  const createFinancialSearch = provider === 'yfinance' ? createYfinanceFinancialSearch : createFinanceFinancialSearch;
+
   const tools: RegisteredTool[] = [
     {
       name: 'financial_search',
